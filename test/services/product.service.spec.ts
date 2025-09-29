@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
 import { container } from 'tsyringe';
-import { ProductService } from '../../src/services/product.service';
-import { PRISMA_SERVICE } from '../../src/constants/services.constants';
-import { ProductType } from '../../src/types/product.type';
+import { ProductService } from '../../src/products/services/product.service';
+import { PRISMA_SERVICE } from '../../src/common/constants/services.constants';
+import { ProductType } from '../../src/products/types/product.type';
 import { PRODUCT_MOCK, PRODUCT_REQUEST_MOCK } from '../mocks/products.mocks';
-import { CreateProductDto } from '../../src/dto/product/create-product.dto';
-import { UpdateProductDto } from '../../src/dto/product/update-product.dto';
+import { CreateProductDto } from '../../src/products/dto/product/create-product.dto';
+import { UpdateProductDto } from '../../src/products/dto/product/update-product.dto';
 
 describe('ProductService', () => {
     let service: ProductService;
@@ -31,7 +31,9 @@ describe('ProductService', () => {
             select: {
                 id: true,
                 name: true,
-                description: true
+                description: true,
+                createdAt: true,
+                updatedAt: true
             }
         },
         categories: {
@@ -40,7 +42,9 @@ describe('ProductService', () => {
                     select: {
                         id: true,
                         name: true,
-                        description: true
+                        description: true,
+                        createdAt: true,
+                        updatedAt: true
                     }
                 }
             }

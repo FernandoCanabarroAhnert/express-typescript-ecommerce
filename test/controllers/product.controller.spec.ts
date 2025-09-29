@@ -1,18 +1,19 @@
 import "reflect-metadata"
 
 import { container } from "tsyringe";
-import { ProductController } from "../../src/controllers/product.controller"
-import { BRAND_SERVICE, CATEGORY_SERVICE, PRODUCT_SERVICE, REDIS_SERVICE } from "../../src/constants/services.constants";
+import { ProductController } from "../../src/products/controllers/product.controller"
+import { BRAND_SERVICE, CATEGORY_SERVICE, PRODUCT_SERVICE, REDIS_SERVICE } from "../../src/common/constants/services.constants";
 import { PRODUCT_MOCK, PRODUCT_REQUEST_MOCK, PRODUCT_RESPONSE_MOCK } from "../mocks/products.mocks";
 import { BRAND_MOCK } from "../mocks/brands.mocks";
 import { CATEGORY_MOCK } from "../mocks/categories.mocks";
-import { CreateProductDto } from "../../src/dto/product/create-product.dto";
-import { UpdateProductDto } from "../../src/dto/product/update-product.dto";
-import { BrandType } from "../../src/types/brand.type";
-import { CategoryType } from "../../src/types/category.type";
-import { ProductResponseDto } from "../../src/dto/product/product-response.dto";
-import { ProductType } from "../../src/types/product.type";
-import { PageResponseDto } from "../../src/dto/page/page-response.dto";
+import { CreateProductDto } from "../../src/products/dto/product/create-product.dto";
+import { UpdateProductDto } from "../../src/products/dto/product/update-product.dto";
+import { BrandType } from "../../src/products/types/brand.type";
+import { CategoryType } from "../../src/products/types/category.type";
+import { ProductResponseDto } from "../../src/products/dto/product/product-response.dto";
+import { ProductType } from "../../src/products/types/product.type";
+import { PageResponseDto } from "../../src/common/dto/page/page-response.dto";
+import { NotFoundException } from "../../src/common/exceptions/not-found.exception";
 
 describe('ProductController', () => {
     let controller: ProductController;

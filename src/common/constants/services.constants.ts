@@ -1,0 +1,13 @@
+export const PRODUCT_SERVICE = 'ProductService';
+export const BRAND_SERVICE = 'BrandService';
+export const CATEGORY_SERVICE = 'CategoryService';
+export const REDIS_SERVICE = 'RedisService';
+export const PRISMA_SERVICE = 'PrismaService';
+export const USER_SERVICE = 'UserService';
+export const AUTH_SERVICE = 'AuthService';
+export const PASSWORD_SERVICE = 'PasswordService';
+export const JWT_SERVICE = 'JwtService';
+export const REFRESH_TOKEN_SERVICE = 'RefreshTokenService';
+export const BLACKLIST_TOKEN_SERVICE = 'BlacklistTokenService';
+export const AUTH_MIDDLEWARE = 'AuthMiddleware';
+export const PRE_AUTHORIZE_MIDDLEWARE = 'PreAuthorizeMiddleware';

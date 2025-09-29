@@ -1,4 +1,4 @@
-import { BrandType } from "../../src/types/brand.type";
+import { BrandType } from "../../src/products/types/brand.type";
 
 export const BRAND_MOCK: BrandType = {
     id: 1,

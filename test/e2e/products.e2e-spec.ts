@@ -3,11 +3,11 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { execSync } from 'child_process';
 import { seedData } from '../utils/seed-data.utils';
-import { PageResponseDto } from '../../src/dto/page/page-response.dto';
-import { ProductResponseDto } from '../../src/dto/product/product-response.dto';
-import { CreateProductDto } from '../../src/dto/product/create-product.dto';
+import { PageResponseDto } from '../../src/common/dto/page/page-response.dto';
+import { ProductResponseDto } from '../../src/products/dto/product/product-response.dto';
+import { CreateProductDto } from '../../src/products/dto/product/create-product.dto';
 import { PRODUCT_REQUEST_MOCK } from '../mocks/products.mocks';
-import { UpdateProductDto } from '../../src/dto/product/update-product.dto';
+import { UpdateProductDto } from '../../src/products/dto/product/update-product.dto';
 import { PrismaClient } from '@prisma/client';
 
 describe('Products E2E', () => {

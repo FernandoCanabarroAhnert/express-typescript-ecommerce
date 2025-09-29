@@ -1,4 +1,4 @@
-import { CategoryType } from '../../src/types/category.type'
+import { CategoryType } from "../../src/products/types/category.type";
 
 export const CATEGORY_MOCK: CategoryType = {
     id: 1,

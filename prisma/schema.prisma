@@ -45,3 +45,30 @@ model ProductCategory {
 
   @@id([productId, categoryId], name: "productId_categoryId")
 }
+
+model Role {
+  id        Int        @id @default(autoincrement())
+  authority String     @unique
+  users     UserRole[]
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  password  String
+  fullName  String
+  cpf       String     @unique
+  birthDate DateTime
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  roles     UserRole[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId], name: "userId_roleId")
+}
