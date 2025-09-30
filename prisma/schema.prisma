@@ -17,6 +17,7 @@ model Product {
   categories  ProductCategory[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  OrderItem   OrderItem[]
 }
 
 model Brand {
@@ -62,6 +63,7 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   roles     UserRole[]
+  orders     Order[]
 }
 
 model UserRole {
@@ -71,4 +73,25 @@ model UserRole {
   role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId], name: "userId_roleId")
+}
+
+model Order {
+  id     Int      @id @default(autoincrement())
+  userId Int
+  amount Decimal
+  moment DateTime @default(now())
+  items  OrderItem[]
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+  productId Int
+  orderId   Int
+  quantity  Int
+  price     Decimal
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  @@id([productId, orderId], name: "productId_orderId")
 }

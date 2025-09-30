@@ -3,6 +3,7 @@ import { inject, injectable } from "tsyringe";
 import { PRISMA_SERVICE } from "../../common/constants/services.constants";
 import { RegisterRequestDto } from "../dto/auth/register-request.dto";
 import { UserType } from "../types/user.type";
+import { ForbiddenException } from "../../common/exceptions/forbidden.exception";
 
 @injectable()
 export class AuthService {
@@ -47,6 +48,16 @@ export class AuthService {
             },
             include: this.includeQuery
         })
+    }
+
+    isAdminOrResourceOwner(user: UserType, resourceUserId: number): void {
+        if (user.roles.some(r => r.role.authority === 'ROLE_ADMIN')) {
+            return;
+        }
+        if (user.id === resourceUserId) {
+            return;
+        }
+        throw new ForbiddenException('You do not have permission to access this resource');
     }
 
 }

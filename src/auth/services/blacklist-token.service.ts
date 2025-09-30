@@ -1,6 +1,6 @@
 import { inject, injectable } from "tsyringe";
 import { REDIS_SERVICE } from "../../common/constants/services.constants";
-import { RedisService } from "./redis.service";
+import { RedisService } from "../../common/services/redis.service";
 import jwt from "jsonwebtoken";
 import { BLACKLIST_CACHE_KEY } from "../../common/constants/cache-keys.constants";
 

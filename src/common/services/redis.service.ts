@@ -1,8 +1,9 @@
 import Redis from "ioredis";
+import { env } from "../config/env.config";
 
 export class RedisService {
 
-    private readonly redis = new Redis(process.env.REDIS_URL as string);
+    private readonly redis = new Redis(env.REDIS_URL);
 
     async set<T>(key: string, value: T, ttl: number = 180): Promise<void> {
         await this.redis.set(key, JSON.stringify(value), "EX", ttl);

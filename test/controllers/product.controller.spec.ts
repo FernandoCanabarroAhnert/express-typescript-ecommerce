@@ -13,7 +13,6 @@ import { CategoryType } from "../../src/products/types/category.type";
 import { ProductResponseDto } from "../../src/products/dto/product/product-response.dto";
 import { ProductType } from "../../src/products/types/product.type";
 import { PageResponseDto } from "../../src/common/dto/page/page-response.dto";
-import { NotFoundException } from "../../src/common/exceptions/not-found.exception";
 
 describe('ProductController', () => {
     let controller: ProductController;

@@ -1,8 +1,12 @@
 import { inject, injectable } from "tsyringe";
 import { PRISMA_SERVICE } from "../../common/constants/services.constants";
 import { CreateBrandDto } from "../dto/brand/create-brand.dto";
-import { UpdateBrandDto } from "../dto/brand/create-brand.dto copy";
+import { UpdateBrandDto } from "../dto/brand/update-brand.dto";
 import { PrismaClient } from "@prisma/client";
+import { BrandResponseDto } from "../dto/brand/brand-response.dto";
+import { BrandMapper } from "../../common/mappers/brand.mapper";
+import { NotFoundException } from "../../common/exceptions/not-found.exception";
+import { BrandType } from "../types/brand.type";
 
 @injectable()
 export class BrandService {
@@ -12,37 +16,49 @@ export class BrandService {
         private readonly prisma: PrismaClient
     ) {}
 
-    async findAll() {
-        return this.prisma.brand.findMany();
+    async findAll(): Promise<BrandResponseDto[]> {
+        return (await this.prisma.brand.findMany()).map(BrandMapper.mapBrandResponse);
     }
 
-    async findById(id: number) {
-        return this.prisma.brand.findUnique({
-            where: { id }
-        });
+    async findById(id: number): Promise<BrandResponseDto> {
+        return BrandMapper.mapBrandResponse(await this.findBrandById(id));
     }
 
-    async create(createBrandDto: CreateBrandDto) {
-        return await this.prisma.brand.create({
+    async create(createBrandDto: CreateBrandDto): Promise<BrandResponseDto> {
+        const brand = await this.prisma.brand.create({
             data: {
                 ...createBrandDto
             }
         });
+        return BrandMapper.mapBrandResponse(brand);
     }
 
-    async update(id: number, updateBrandDto: UpdateBrandDto) {
-        return await this.prisma.brand.update({
+    async update(id: number, updateBrandDto: UpdateBrandDto): Promise<BrandResponseDto> {
+        await this.findBrandById(id);
+        const brand = await this.prisma.brand.update({
             where: { id },
             data: {
                 ...updateBrandDto
             }
+        });
+        return BrandMapper.mapBrandResponse(brand);
+    }
+
+    async delete(id: number): Promise<void> {
+        await this.findBrandById(id);
+        await this.prisma.brand.delete({
+            where: { id }
         })
     }
 
-    async delete(id: number) {
-        return await this.prisma.brand.delete({
+    private async findBrandById(id: number): Promise<BrandType> {
+        const brand = await this.prisma.brand.findUnique({
             where: { id }
-        })
+        });
+        if (!brand) {
+            throw new NotFoundException(`Brand with id ${id} not found`)
+        }
+        return brand;
     }
 
 }

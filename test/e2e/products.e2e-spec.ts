@@ -35,6 +35,8 @@ describe('Products E2E', () => {
         const redisUrl = `redis://${redisContainer.getHost()}:${redisContainer.getMappedPort(6379)}`;
         process.env.DATABASE_URL = url;
         process.env.REDIS_URL = redisUrl;
+        //process.env.PORT = '3000';
+        //process.env.JWT_SECRET = 'secret'
         
         execSync('npx prisma migrate deploy', { env: { ...process.env } });
 

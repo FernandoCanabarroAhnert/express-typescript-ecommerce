@@ -3,6 +3,10 @@ import { PRISMA_SERVICE } from "../../common/constants/services.constants";
 import { CreateCategoryDto } from "../dto/category/create-category.dto";
 import { UpdateCategoryDto } from "../dto/category/update-category.dto";
 import { PrismaClient } from "@prisma/client";
+import { CategoryType } from "../types/category.type";
+import { NotFoundException } from "../../common/exceptions/not-found.exception";
+import { CategoryResponseDto } from "../dto/category/category-response.dto";
+import { CategoryMapper } from "../../common/mappers/category.mapper";
 
 @injectable()
 export class CategoryService {
@@ -12,37 +16,49 @@ export class CategoryService {
         private readonly prisma: PrismaClient
     ) {}
 
-    async findAll() {
-        return await this.prisma.category.findMany();
+    async findAll(): Promise<CategoryResponseDto[]> {
+        return (await this.prisma.category.findMany()).map(CategoryMapper.mapCategoryResponse);
     }
 
-    async findById(id: number) {
-        return await this.prisma.category.findUnique({
-            where: { id }
-        });
+    async findById(id: number): Promise<CategoryResponseDto> {
+        return CategoryMapper.mapCategoryResponse(await this.findCategoryById(id));
     }
 
-    async create(createCategoryDto: CreateCategoryDto) {
-        return await this.prisma.category.create({
+    async create(createCategoryDto: CreateCategoryDto): Promise<CategoryResponseDto> {
+        const category = await this.prisma.category.create({
             data: {
                 ...createCategoryDto
             }
         });
+        return CategoryMapper.mapCategoryResponse(category);
     }
 
-    async update(id: number, updateCategoryDto: UpdateCategoryDto) {
-        return await this.prisma.category.update({
+    async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<CategoryResponseDto> {
+        await this.findCategoryById(id);
+        const category = await this.prisma.category.update({
             where: { id },
             data: {
                 ...updateCategoryDto
             }
         });
+        return CategoryMapper.mapCategoryResponse(category);
     }
 
-    async delete(id: number) {
-        return await this.prisma.category.delete({
+    async delete(id: number): Promise<void> {
+        await this.findCategoryById(id);
+        await this.prisma.category.delete({
             where: { id }
         });
+    }
+
+    private async findCategoryById(id: number): Promise<CategoryType> {
+        const category = await this.prisma.category.findUnique({
+            where: { id }
+        });
+        if (!category) {
+            throw new NotFoundException(`Category with id ${id} not found`)
+        }
+        return category;
     }
 
 }

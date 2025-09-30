@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { BrandController } from "../controllers/brand.controller";
 import { CreateBrandDto } from "../dto/brand/create-brand.dto";
-import { UpdateBrandDto } from "../dto/brand/create-brand.dto copy";
+import { UpdateBrandDto } from "../dto/brand/update-brand.dto";
 import { containerInjector } from "../../common/config/container-injector.config";
 import { validateRequest } from "../../common/middlewares/validate-request.middleware";
 

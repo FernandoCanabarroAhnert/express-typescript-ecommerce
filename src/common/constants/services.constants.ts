@@ -11,3 +11,4 @@ export const REFRESH_TOKEN_SERVICE = 'RefreshTokenService';
 export const BLACKLIST_TOKEN_SERVICE = 'BlacklistTokenService';
 export const AUTH_MIDDLEWARE = 'AuthMiddleware';
 export const PRE_AUTHORIZE_MIDDLEWARE = 'PreAuthorizeMiddleware';
+export const ORDER_SERVICE = 'OrderService';
