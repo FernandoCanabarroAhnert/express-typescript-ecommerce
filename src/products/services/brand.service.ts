@@ -7,6 +7,7 @@ import { BrandResponseDto } from "../dto/brand/brand-response.dto";
 import { BrandMapper } from "../../common/mappers/brand.mapper";
 import { NotFoundException } from "../../common/exceptions/not-found.exception";
 import { BrandType } from "../types/brand.type";
+import { PageResponseDto } from "../../common/dto/page/page-response.dto";
 
 @injectable()
 export class BrandService {
@@ -16,8 +17,23 @@ export class BrandService {
         private readonly prisma: PrismaClient
     ) {}
 
-    async findAll(): Promise<BrandResponseDto[]> {
-        return (await this.prisma.brand.findMany()).map(BrandMapper.mapBrandResponse);
+    async findAll(page: number = 1, size: number = 10, sort: string = 'id', order: 'asc' | 'desc' = 'asc'): Promise<PageResponseDto<BrandResponseDto>> {
+        const totalItems = await this.prisma.brand.count();
+        const totalPages = Math.ceil(totalItems / size);
+        const brands = await this.prisma.brand.findMany({
+            take: size,
+            skip: (page - 1) * size,
+            orderBy: {
+                [sort]: order
+            }
+        }).then(results => results.map(BrandMapper.mapBrandResponse));
+        return new PageResponseDto<BrandResponseDto>({
+            data: brands,
+            numberOfItems: brands.length,
+            totalItems,
+            currentPage: page,
+            totalPages
+        });
     }
 
     async findById(id: number): Promise<BrandResponseDto> {

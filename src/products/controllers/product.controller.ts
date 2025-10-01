@@ -36,13 +36,13 @@ export class ProductController {
     updateProduct = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
         const id = obtainAndValidateId(req);
         const dto = ProductMapper.mapUpdateProduct(req);
-        const updatedProduct = await this.productService.update(id, dto);
+        const updatedProduct = await this.productService.update(+id, dto);
         return res.json(updatedProduct);
     });
 
     deleteProduct = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
         const id = obtainAndValidateId(req);
-        await this.productService.delete(id);
+        await this.productService.delete(+id);
         return res.status(204).send();
     });
 

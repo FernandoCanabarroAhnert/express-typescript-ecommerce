@@ -4,12 +4,13 @@ import { CreateCategoryDto } from "../dto/category/create-category.dto";
 import { UpdateCategoryDto } from "../dto/category/update-category.dto";
 import { containerInjector } from "../../common/config/container-injector.config";
 import { validateRequest } from "../../common/middlewares/validate-request.middleware";
+import { PaginationParamsDto } from "../../common/dto/page/pagination-params.dto";
 
 const categoryController = containerInjector.resolve(CategoryController);
 const categoryRoutes = Router();
 
 categoryRoutes
-    .get("/", categoryController.findAll)
+    .get("/", validateRequest(PaginationParamsDto, 'query'), categoryController.findAll)
     .get("/:id", categoryController.findById)
     .post("/", validateRequest(CreateCategoryDto, 'body'), categoryController.createCategory)
     .patch("/:id", validateRequest(UpdateCategoryDto, 'body'), categoryController.updateCategory)

@@ -14,6 +14,7 @@ describe('BrandService', () => {
     let service: BrandService;
     const prismaMock = {
         brand: {
+            count: jest.fn(),
             findMany: jest.fn(),
             findUnique: jest.fn(),
             create: jest.fn(),
@@ -24,6 +25,13 @@ describe('BrandService', () => {
 
     const existingId = 1;
     const nonExistingId = 999;
+    const paginatedResponse = {
+        data: [BRAND_RESPONSE_MOCK],
+        currentPage: 1,
+        totalPages: 1,
+        numberOfItems: 1,
+        totalItems: 1,
+    }
     let brandMock: BrandType;
     let createBrandDto: CreateBrandDto;
     let updateBrandDto: UpdateBrandDto;
@@ -45,10 +53,11 @@ describe('BrandService', () => {
     });
 
     describe('findAll', () => {
-        it('should return an array of brands', async () => {
+        it('should return PageResponseDto of brands', async () => {
+            prismaMock.brand.count.mockResolvedValue(1);
             prismaMock.brand.findMany.mockResolvedValue([brandMock]);
             const result = await service.findAll();
-            expect(result).toEqual([brandResponseMock]);
+            expect(result).toEqual(paginatedResponse);
         });
     });
 

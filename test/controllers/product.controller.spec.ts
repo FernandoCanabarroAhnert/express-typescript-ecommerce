@@ -2,17 +2,13 @@ import "reflect-metadata"
 
 import { container } from "tsyringe";
 import { ProductController } from "../../src/products/controllers/product.controller"
-import { BRAND_SERVICE, CATEGORY_SERVICE, PRODUCT_SERVICE, REDIS_SERVICE } from "../../src/common/constants/services.constants";
-import { PRODUCT_MOCK, PRODUCT_REQUEST_MOCK, PRODUCT_RESPONSE_MOCK } from "../mocks/products.mocks";
-import { BRAND_MOCK } from "../mocks/brands.mocks";
-import { CATEGORY_MOCK } from "../mocks/categories.mocks";
+import { PRODUCT_SERVICE } from "../../src/common/constants/services.constants";
+import { PRODUCT_REQUEST_MOCK, PRODUCT_RESPONSE_MOCK } from "../mocks/products.mocks";
 import { CreateProductDto } from "../../src/products/dto/product/create-product.dto";
 import { UpdateProductDto } from "../../src/products/dto/product/update-product.dto";
-import { BrandType } from "../../src/products/types/brand.type";
-import { CategoryType } from "../../src/products/types/category.type";
 import { ProductResponseDto } from "../../src/products/dto/product/product-response.dto";
-import { ProductType } from "../../src/products/types/product.type";
 import { PageResponseDto } from "../../src/common/dto/page/page-response.dto";
+import { NotFoundException } from "../../src/common/exceptions/not-found.exception";
 
 describe('ProductController', () => {
     let controller: ProductController;
@@ -22,25 +18,6 @@ describe('ProductController', () => {
         findById: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn()
-    }
-    const brandServiceMock = {
-        findAll: jest.fn(),
-        findById: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn()
-    }
-    const categoryServiceMock = {
-        findAll: jest.fn(),
-        findById: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn()
-    }
-    const redisServiceMock = {
-        get: jest.fn(),
-        set: jest.fn(),
         delete: jest.fn()
     }
 
@@ -78,19 +55,13 @@ describe('ProductController', () => {
     }
 
     let productRequestMock: CreateProductDto;
-    let updateProductMock: UpdateProductDto;
-    let productMock: ProductType;
+    let updateProductResponseMock: UpdateProductDto;
     let productResponseMock: ProductResponseDto;
-    let brandMock: BrandType;
-    let categoryMock: CategoryType;
-    let paginatedProductsMock: PageResponseDto<ProductType>;
+    let paginatedProductsMock: PageResponseDto<ProductResponseDto>;
 
     beforeAll(() => {
         container.clearInstances();
         container.registerInstance(PRODUCT_SERVICE, productServiceMock);
-        container.registerInstance(BRAND_SERVICE, brandServiceMock);
-        container.registerInstance(CATEGORY_SERVICE, categoryServiceMock);
-        container.registerInstance(REDIS_SERVICE, redisServiceMock);
 
         controller = container.resolve(ProductController);
     });
@@ -98,13 +69,10 @@ describe('ProductController', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         productRequestMock = PRODUCT_REQUEST_MOCK;
-        updateProductMock = productRequestMock as UpdateProductDto;
-        productMock = PRODUCT_MOCK;
+        updateProductResponseMock = productRequestMock as UpdateProductDto;
         productResponseMock = PRODUCT_RESPONSE_MOCK;
-        brandMock = BRAND_MOCK;
-        categoryMock = CATEGORY_MOCK;
         paginatedProductsMock = {
-            data: [productMock],
+            data: [productResponseMock],
             numberOfItems: 1,
             totalItems: 1,
             currentPage: 1,
@@ -114,33 +82,25 @@ describe('ProductController', () => {
 
     describe('findAll', () => {
         it('should return paginated products', async () => {
-            const expectedPageResponse = { ...paginatedProductsMock, data: [productResponseMock] };
             productServiceMock.findAll.mockResolvedValue(paginatedProductsMock);
-
             await controller.findAllProducts(reqMock, resMock, nextMock);
-            expect(resMock.json).toHaveBeenCalledWith(expectedPageResponse);
+            expect(resMock.json).toHaveBeenCalledWith(paginatedProductsMock);
         });
     });
 
     describe('findById', () => {
         it('should return a ProductResponseDto when product is found', async () => {
             reqMock.params.id = existingId;
-            redisServiceMock.get.mockResolvedValue(null);
-            productServiceMock.findById.mockResolvedValue(productMock);
+            productServiceMock.findById.mockResolvedValue(productResponseMock);
 
-            await controller.findById(reqMock, resMock, nextMock);
-            expect(resMock.json).toHaveBeenCalledWith(productResponseMock);
-        });
-        it('should return a cached product if available', async () => {
-            reqMock.params.id = existingId;
-            redisServiceMock.get.mockResolvedValue(productResponseMock);
             await controller.findById(reqMock, resMock, nextMock);
             expect(resMock.json).toHaveBeenCalledWith(productResponseMock);
         });
         it('should throw Not Found Error if product is not found', async () => {
             reqMock.params.id = nonExistingId;
-            redisServiceMock.get.mockResolvedValue(null);
-            productServiceMock.findById.mockResolvedValue(null);
+            productServiceMock.findById = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Product not found'));
+            });
             await controller.findById(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         });
@@ -154,24 +114,25 @@ describe('ProductController', () => {
     describe('create', () => {
         it('should create a product successfully', async () => {
             reqMock.body = productRequestMock;
-            brandServiceMock.findById.mockResolvedValue(brandMock);
-            categoryServiceMock.findById.mockResolvedValue(categoryMock);
-            productServiceMock.create.mockResolvedValue(productMock);
+            productServiceMock.create.mockResolvedValue(productResponseMock);
 
             await controller.createProduct(reqMock, resMock, nextMock);
             expect(resMock.status).toHaveBeenCalledWith(201);
             expect(resMock.json).toHaveBeenCalledWith(productResponseMock);
         });
         it('should throw Not Found Error if brand is not found', async () => {
+            productServiceMock.create = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Brand not found'));
+            });
             reqMock.body = { ...productRequestMock, brandId: nonExistingId };
-            brandServiceMock.findById.mockResolvedValue(null);
             await controller.createProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         });
         it('should throw Not Found Error if category is not found', async () => {
+            productServiceMock.create = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Category not found'));
+            });
             reqMock.body = { ...productRequestMock, categoriesIds: [nonExistingId] };
-            brandServiceMock.findById.mockResolvedValue(brandMock);
-            categoryServiceMock.findById.mockResolvedValue(null);
             await controller.createProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         });
@@ -180,11 +141,9 @@ describe('ProductController', () => {
     describe('update', () => {
         it('should update a product successfully', async () => {
             reqMock.params.id = existingId;
-            reqMock.body = updateProductMock;
-            brandServiceMock.findById.mockResolvedValue(brandMock);
-            categoryServiceMock.findById.mockResolvedValue(categoryMock);
-            productServiceMock.findById.mockResolvedValue(productMock);
-            productServiceMock.update.mockResolvedValue(productMock);
+            reqMock.body = updateProductResponseMock;
+            productServiceMock.findById.mockResolvedValue(productResponseMock);
+            productServiceMock.update.mockResolvedValue(productResponseMock);
 
             await controller.updateProduct(reqMock, resMock, nextMock);
             expect(resMock.json).toHaveBeenCalledWith(productResponseMock);
@@ -195,25 +154,31 @@ describe('ProductController', () => {
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(badRequestError));
         });
         it('should throw Not Found Error if brand is not found', async () => {
+            productServiceMock.update = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Brand not found'));
+            });
             reqMock.params.id = existingId;
-            reqMock.body = { ...updateProductMock, brandId: nonExistingId };
-            brandServiceMock.findById.mockResolvedValue(null);
+            reqMock.body = { ...updateProductResponseMock, brandId: nonExistingId };
 
             await controller.updateProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         });
         it('should throw Not Found Error if category is not found', async () => {
+            productServiceMock.update = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Category not found'));
+            });
             reqMock.params.id = existingId;
-            reqMock.body = { ...updateProductMock, categoriesIds: [nonExistingId] };
-            brandServiceMock.findById.mockResolvedValue(brandMock);
-            categoryServiceMock.findById.mockResolvedValue(null);
+            reqMock.body = { ...updateProductResponseMock, categoriesIds: [nonExistingId] };
 
             await controller.updateProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         })
         it('should throw Not Found Error if product is not found', async () => {
+            productServiceMock.update = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Product not found'));
+            });
             reqMock.params.id = nonExistingId;
-            reqMock.body = updateProductMock;
+            reqMock.body = updateProductResponseMock;
             productServiceMock.findById.mockResolvedValue(null);
             await controller.updateProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
@@ -223,16 +188,17 @@ describe('ProductController', () => {
     describe('delete', () => {
         it('should delete a product successfully', async () => {
             reqMock.params.id = existingId;
-            productServiceMock.findById.mockResolvedValue(productMock);
-            productServiceMock.delete.mockResolvedValue(productMock);
+            productServiceMock.delete.mockResolvedValue(productResponseMock);
             await controller.deleteProduct(reqMock, resMock, nextMock);
             expect(productServiceMock.delete).toHaveBeenCalledWith(1);
             expect(resMock.status).toHaveBeenCalledWith(204);
             expect(resMock.send).toHaveBeenCalled();
         });
         it('should throw Not Found Error if product is not found', async () => {
-            reqMock.params.id = existingId;
-            productServiceMock.findById.mockResolvedValue(null);
+            reqMock.params.id = nonExistingId;
+            productServiceMock.delete = jest.fn(() => {
+                return Promise.reject(new NotFoundException('Product not found'));
+            });
             await controller.deleteProduct(reqMock, resMock, nextMock);
             expect(nextMock).toHaveBeenCalledWith(expect.objectContaining(notFoundError));
         });

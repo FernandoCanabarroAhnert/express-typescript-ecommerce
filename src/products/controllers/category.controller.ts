@@ -5,6 +5,8 @@ import { CreateCategoryDto } from "../dto/category/create-category.dto";
 import { UpdateCategoryDto } from "../dto/category/update-category.dto";
 import { inject, injectable } from "tsyringe";
 import { CATEGORY_SERVICE } from "../../common/constants/services.constants";
+import { obtainPaginationParams } from "../../common/utils/pagination.utils";
+import { obtainAndValidateId } from "../../common/utils/id.utils";
 
 @injectable()
 export class CategoryController {
@@ -15,12 +17,13 @@ export class CategoryController {
     ) {}
 
     findAll = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const categories = await this.categoryService.findAll();
+        const { page, size, sort, order } = obtainPaginationParams(req);
+        const categories = await this.categoryService.findAll(page, size, sort, order);
         res.json(categories);
     });
 
     findById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         const category = await this.categoryService.findById(+id);
         return res.json(category);
     });
@@ -33,7 +36,7 @@ export class CategoryController {
     });
 
     updateCategory = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         const { name, description } = req.body;
         const dto = new UpdateCategoryDto({ name, description });
         const updatedCategory = await this.categoryService.update(+id, dto);
@@ -41,7 +44,7 @@ export class CategoryController {
     });
 
     deleteCategory = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         await this.categoryService.delete(+id);
         return res.status(204).send();
     });

@@ -14,6 +14,7 @@ describe('categoryService', () => {
     let service: CategoryService;
     const prismaMock = {
         category: {
+            count: jest.fn(),
             findMany: jest.fn(),
             findUnique: jest.fn(),
             create: jest.fn(),
@@ -24,6 +25,13 @@ describe('categoryService', () => {
 
     const existingId = 1;
     const nonExistingId = 999;
+    const paginatedResult = {
+        currentPage: 1,
+        totalPages: 1,
+        numberOfItems: 1,
+        totalItems: 1,
+        data: [CATEGORY_RESPONSE_MOCK],
+    }
     let categoryMock: CategoryType;
     let createcategoryDto: CreateCategoryDto;
     let updatecategoryDto: UpdateCategoryDto;
@@ -45,10 +53,11 @@ describe('categoryService', () => {
     });
 
     describe('findAll', () => {
-        it('should return an array of categorys', async () => {
+        it('should return PageResponseDto of categories', async () => {
+            prismaMock.category.count.mockResolvedValue(1);
             prismaMock.category.findMany.mockResolvedValue([categoryMock]);
             const result = await service.findAll();
-            expect(result).toEqual([categoryResponseMock]);
+            expect(result).toEqual(paginatedResult);
         });
     });
 

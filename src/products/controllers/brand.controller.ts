@@ -5,6 +5,8 @@ import { CreateBrandDto } from "../dto/brand/create-brand.dto";
 import { UpdateBrandDto } from "../dto/brand/update-brand.dto";
 import { inject, injectable } from "tsyringe";
 import { BRAND_SERVICE } from "../../common/constants/services.constants";
+import { obtainPaginationParams } from "../../common/utils/pagination.utils";
+import { obtainAndValidateId } from "../../common/utils/id.utils";
 
 @injectable()
 export class BrandController {
@@ -15,12 +17,13 @@ export class BrandController {
     ) {}
 
     findAll = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const brands = await this.brandService.findAll();
+        const { page, size, sort, order } = obtainPaginationParams(req);
+        const brands = await this.brandService.findAll(page, size, sort, order);
         return res.json(brands);
     });
 
     findById = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         const brand = await this.brandService.findById(+id);
         return res.json(brand);
     });
@@ -33,7 +36,7 @@ export class BrandController {
     });
 
     updateBrand = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         const { name, description } = req.body;
         const dto = new UpdateBrandDto({ name, description });
         const updatedBrand = await this.brandService.update(+id, dto);
@@ -41,7 +44,7 @@ export class BrandController {
     })
 
     delete = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const id = req.params.id;
+        const id = obtainAndValidateId(req);
         await this.brandService.delete(+id);
         return res.status(204).send();
     });

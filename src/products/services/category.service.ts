@@ -7,6 +7,7 @@ import { CategoryType } from "../types/category.type";
 import { NotFoundException } from "../../common/exceptions/not-found.exception";
 import { CategoryResponseDto } from "../dto/category/category-response.dto";
 import { CategoryMapper } from "../../common/mappers/category.mapper";
+import { PageResponseDto } from "../../common/dto/page/page-response.dto";
 
 @injectable()
 export class CategoryService {
@@ -16,8 +17,24 @@ export class CategoryService {
         private readonly prisma: PrismaClient
     ) {}
 
-    async findAll(): Promise<CategoryResponseDto[]> {
-        return (await this.prisma.category.findMany()).map(CategoryMapper.mapCategoryResponse);
+    async findAll(page: number = 1, size: number = 10, sort: string = 'id', order: 'asc' | 'desc' = 'asc'): Promise<PageResponseDto<CategoryResponseDto>> {
+        const totalItems = await this.prisma.category.count();
+        const totalPages = Math.ceil(totalItems / size);
+        const categories = await this.prisma.category.findMany({
+            take: size,
+            skip: (page - 1) * size,
+            orderBy: {
+                [sort]: order
+            }
+        }).then(results => results.map(CategoryMapper.mapCategoryResponse));
+        const response = new PageResponseDto<CategoryResponseDto>({
+            data: categories,
+            currentPage: page,
+            totalPages,
+            numberOfItems: categories.length,
+            totalItems
+        });
+        return response;
     }
 
     async findById(id: number): Promise<CategoryResponseDto> {
