@@ -134,9 +134,6 @@ export class OrderService {
         const itemsWithProduct = await Promise.all(
             createOrderDto.items.map(async item => {
                 const product = await this.productService.findById(item.productId);
-                if (!product) {
-                    throw new NotFoundException(`Product with ID ${item.productId} not found`);
-                }
                 return {
                     product,
                     quantity: item.quantity,

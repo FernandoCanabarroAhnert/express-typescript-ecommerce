@@ -26,7 +26,7 @@ export class AuthController {
     });
 
     refreshToken = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-        const accessToken = await this.authService.refreshToken(req, res);
+        const accessToken = await this.authService.refreshToken(req);
         return res.json({ accessToken });
     });
 

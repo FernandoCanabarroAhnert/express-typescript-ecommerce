@@ -10,11 +10,11 @@ export class JwtService {
     }
 
     encodeAccessToken({ email, authorities }: { email: string; authorities: string[] }): string {
-        return jwt.sign({ subject: email, authorities, jti: this.generateJti() }, this.JWT_SECRET, { expiresIn: '1d' });
+        return jwt.sign({ subject: email, authorities, jti: this.generateJti() }, this.JWT_SECRET, { expiresIn: `${env.ACCESS_TOKEN_DURATION}s` });
     }
 
     encodeRefreshToken(email: string): string {
-        return jwt.sign({ subject: email, jti: this.generateJti() }, this.JWT_SECRET, { expiresIn: '30d' });
+        return jwt.sign({ subject: email, jti: this.generateJti() }, this.JWT_SECRET, { expiresIn: `${env.REFRESH_TOKEN_DURATION}s` });
     }
 
     isTokenValid(token: string): boolean {

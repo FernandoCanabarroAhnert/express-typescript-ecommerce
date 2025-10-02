@@ -16,6 +16,7 @@ import { NextFunction, Request, Response } from "express";
 import { UnauthorizedException } from "../../common/exceptions/unauthorized.exception";
 import { UserService } from "./user.service";
 import jwt from "jsonwebtoken";
+import { RolesEnum } from "../../common/enums/roles.enum";
 
 @injectable()
 export class AuthService {
@@ -52,6 +53,10 @@ export class AuthService {
         const emailAlreadyExists = await this.userService.findByEmail(registerRequestDto.email);
         if (emailAlreadyExists) {
             throw new ConflictException("Email already in use");
+        }
+        const cpfAlreadyExists = await this.userService.findByCpf(registerRequestDto.cpf);
+        if (cpfAlreadyExists) {
+            throw new ConflictException("CPF already in use");
         }
         const hashedPassword = await this.passwordService.encodePassword(registerRequestDto.password);
         const userRole = await this.prisma.role.findFirst({
@@ -96,9 +101,9 @@ export class AuthService {
         return accessToken;
     }
 
-    async refreshToken(req: Request, res: Response): Promise<string> {
+    async refreshToken(req: Request): Promise<string> {
         const refreshToken = await this.obtainAndValidateRefreshToken(req);
-        const email = refreshToken.subject!;
+        const email = refreshToken.subject;
         const user = await this.userService.findByEmail(email);
         if (!user) {
             throw new UnauthorizedException("User not found");
@@ -112,13 +117,13 @@ export class AuthService {
         const refreshToken = await this.obtainAndValidateRefreshToken(req)
         await this.refreshTokenService.deleteRefreshToken(refreshToken.jti!);
         this.setRefreshTokenCookie(res, "");
-        const bearerTokenValue = req.headers.authorization?.split(' ')[1]!;
+        const bearerTokenValue = req.headers.authorization!.split(' ')[1]!;
         const decodedBearerToken = this.jwtService.decodeToken(bearerTokenValue);
         await this.blacklistTokenService.addToBlacklist(decodedBearerToken, bearerTokenValue);
     }
 
     isAdminOrResourceOwner(user: UserType, resourceUserId: number): void {
-        if (user.roles.some(r => r.role.authority === 'ROLE_ADMIN')) {
+        if (user.roles.some(r => r.role.authority === RolesEnum.ADMIN)) {
             return;
         }
         if (user.id === resourceUserId) {
