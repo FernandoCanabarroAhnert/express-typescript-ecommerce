@@ -1,7 +1,6 @@
 import request from 'supertest';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { GenericContainer, StartedTestContainer } from 'testcontainers';
-import { execSync } from 'child_process';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { StartedTestContainer } from 'testcontainers';
 import { seedData } from '../utils/seed-data.utils';
 import { PageResponseDto } from '../../src/common/dto/page/page-response.dto';
 import { ProductResponseDto } from '../../src/products/dto/product/product-response.dto';
@@ -9,6 +8,9 @@ import { CreateProductDto } from '../../src/products/dto/product/create-product.
 import { PRODUCT_REQUEST_MOCK } from '../mocks/products.mocks';
 import { UpdateProductDto } from '../../src/products/dto/product/update-product.dto';
 import { PrismaClient } from '@prisma/client';
+import { obtainAuthToken } from '../utils/token.utils';
+import { startContainers } from '../utils/containers.utils';
+import { setTestEnvironmentVariables } from '../utils/env.utils';
 
 describe('Products E2E', () => {
     let postgresContainer: StartedPostgreSqlContainer;
@@ -20,25 +22,19 @@ describe('Products E2E', () => {
     let createProductDto: CreateProductDto;
     let createdProductId: number;
     let updateProductDto: UpdateProductDto;
+    let adminEmail: string;
+    let adminPassword: string;
+    let userEmail: string;
+    let userPassword: string;
+    let adminToken: string;
+    let userToken: string;
 
     beforeAll(async () => {
-        postgresContainer = await new PostgreSqlContainer('postgres:16')
-            .withExposedPorts(5432)
-            .withUsername('postgres')
-            .withPassword('1234567')
-            .withDatabase('products')
-            .start();
-        redisContainer = await new GenericContainer('redis:6.2')
-            .withExposedPorts(6379)
-            .start();
-        const url = postgresContainer.getConnectionUri();
-        const redisUrl = `redis://${redisContainer.getHost()}:${redisContainer.getMappedPort(6379)}`;
-        process.env.DATABASE_URL = url;
-        process.env.REDIS_URL = redisUrl;
-        //process.env.PORT = '3000';
-        //process.env.JWT_SECRET = 'secret'
-        
-        execSync('npx prisma migrate deploy', { env: { ...process.env } });
+        const { startedPostgresContainer, startedRedisContainer, postgresUrl, redisUrl } = await startContainers();
+        postgresContainer = startedPostgresContainer;
+        redisContainer = startedRedisContainer;
+
+        setTestEnvironmentVariables(postgresUrl, redisUrl);
 
         const mod = await import('../../src/index');
         app = mod.default;
@@ -47,16 +43,22 @@ describe('Products E2E', () => {
         await seedData(prisma);
     }, 120000);
 
-    beforeEach(() => {
+    beforeEach(async () => {
         createProductDto = PRODUCT_REQUEST_MOCK;
-        updateProductDto = createProductDto as UpdateProductDto;
-    })
+        updateProductDto = { ...createProductDto, name: 'Updated Product', description: 'Updated Description' } as UpdateProductDto;
+        adminEmail = 'john.doe@example.com';
+        adminPassword = '12345';
+        userEmail = 'maria.silva@example.com';
+        userPassword = '12345';
+        adminToken = (await obtainAuthToken(app, adminEmail, adminPassword)).accessToken;
+        userToken = (await obtainAuthToken(app, userEmail, userPassword)).accessToken;
+    }, 120000)
 
     afterAll(async () => {
         await prisma?.$disconnect();
         await postgresContainer.stop();
         await redisContainer.stop();
-    });
+    }, 120000);
 
     describe('GET /products', () => {
         it('should return products paginated without query params', async () => {
@@ -124,6 +126,7 @@ describe('Products E2E', () => {
         it('should return 201 and create a new product', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(createProductDto)
                 .expect(201)
                 .then(response => {
@@ -138,48 +141,69 @@ describe('Products E2E', () => {
         it('should return 400 if name is blank', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, name: '' })
                 .expect(400);
         });
         it('should return 400 if description is blank', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, description: '' })
                 .expect(400);
         });
         it('should return 400 if price is null', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, price: null })
                 .expect(400);
         });
         it('should return 400 if price is negative', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, price: -1 })
                 .expect(400);
         });
         it('should return 400 if brandId is null', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, brandId: null })
                 .expect(400);
         });
         it('should return 400 if categoriesIds is empty', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, categoriesIds: [] })
                 .expect(400);
+        });
+        it('should return 401 if no token is provided', async () => {
+            await request(app)
+                .post('/products')
+                .send(createProductDto)
+                .expect(401);
+        });
+        it('should return 403 if user is not admin', async () => {
+            await request(app)
+                .post('/products')
+                .set('Authorization', `Bearer ${userToken}`)
+                .send(createProductDto)
+                .expect(403);
         });
         it('should return 404 if brand does not exist', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, brandId: nonExistingId })
                 .expect(404);
         });
         it('should return 404 if category does not exist', async () => {
             await request(app)
                 .post('/products')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...createProductDto, categoriesIds: [nonExistingId] })
                 .expect(404);
         });
@@ -189,7 +213,8 @@ describe('Products E2E', () => {
         it('should return 200 and update a product', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
-                .send({ ...updateProductDto, name: 'Updated Product', description: 'Updated Description' })
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send(updateProductDto)
                 .expect(200)
                 .then(response => {
                     const product = response.body;
@@ -202,60 +227,83 @@ describe('Products E2E', () => {
         it('should return 400 if id is invalid', async () => {
             await request(app)
                 .patch('/products/agjh1989824g5hb')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(updateProductDto)
                 .expect(400);
         });
         it('should return 404 if product does not exist', async () => {
             await request(app)
                 .patch(`/products/${nonExistingId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send(updateProductDto)
                 .expect(404);
         });
         it('should return 400 if name is blank', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, name: '' })
                 .expect(400);
         });
         it('should return 400 if description is blank', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, description: '' })
                 .expect(400);
         });
         it('should return 400 if price is null', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, price: null })
                 .expect(400);
         });
         it('should return 400 if price is negative', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, price: -1 })
                 .expect(400);
         });
         it('should return 400 if brandId is null', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, brandId: null })
                 .expect(400);
         });
         it('should return 400 if categoriesIds is empty', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, categoriesIds: [] })
                 .expect(400);
+        });
+        it('should return 401 if no token is provided', async () => {
+            await request(app)
+                .patch(`/products/${createdProductId}`)
+                .send(createProductDto)
+                .expect(401);
+        });
+        it('should return 403 if user is not admin', async () => {
+            await request(app)
+                .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${userToken}`)
+                .send(createProductDto)
+                .expect(403);
         });
         it('should return 404 if brand does not exist', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, brandId: nonExistingId })
                 .expect(404);
         });
         it('should return 404 if category does not exist', async () => {
             await request(app)
                 .patch(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .send({ ...updateProductDto, categoriesIds: [nonExistingId] })
                 .expect(404);
         });
@@ -265,16 +313,30 @@ describe('Products E2E', () => {
         it('should return 204 and delete a product', async () => {
             await request(app)
                 .delete(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(204);
         });
         it('should return 400 if id is invalid', async () => {
             await request(app)
                 .delete('/products/agjh1989824g5hb')
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(400);
+        });
+        it('should return 401 if no token is provided', async () => {
+            await request(app)
+                .delete(`/products/${createdProductId}`)
+                .expect(401);
+        });
+        it('should return 403 if user is not admin', async () => {
+            await request(app)
+                .delete(`/products/${createdProductId}`)
+                .set('Authorization', `Bearer ${userToken}`)
+                .expect(403);
         });
         it('should return 404 if product does not exist', async () => {
             await request(app)
                 .delete(`/products/${nonExistingId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
                 .expect(404);
         });
     })
