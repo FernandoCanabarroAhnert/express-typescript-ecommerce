@@ -7,6 +7,15 @@ on:
 jobs:
     build:
         runs-on: ubuntu-latest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ACCESS_TOKEN_DURATION: "86400"
+          REFRESH_TOKEN_DURATION: "604800"
+          PORT: "3000"
+          NODE_ENV: "test"
+          LOG_LEVEL: "info"
         steps:
             - name: Code Checkout
               uses: actions/checkout@v4
