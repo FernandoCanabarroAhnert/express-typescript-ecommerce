@@ -12,7 +12,7 @@
 ![Testcontainers](https://img.shields.io/badge/Testcontainers-%2300BCD4?style=for-the-badge&logo=Docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
-## O que é o desafio? 🤔
+## O que é o projeto? 🤔
 
 Este API permite o CRUD de categorias, marcas e produtos, e a visualização e criação de pedidos, e os endpoints de consulta permitem a busca paginada.
 Foi implementado a segurança da API com JWT, Refresh Token e Logout, com a utilização do Redis para guardar o estado dos Refresh Token e dos token Blacklist.
