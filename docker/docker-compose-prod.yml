@@ -32,27 +32,25 @@ services:
       - "6379:6379"
     networks:
       - dev-network
-  # product-api:
-  #   build:
-  #     context: ..
-  #     dockerfile: Dockerfile
-  #   container_name: product-api
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:1234567@pg-docker:5432/products
-  #     - REDIS_URL=redis://redis:6379
-  #     - JWT_SECRET=secret-key
-  #     - ACCESS_TOKEN_DURATION=86400
-  #     - REFRESH_TOKEN_DURATION=2592000
-  #     - PORT=3000
-  #     - NODE_ENV=dev
-  #     - LOG_LEVEL=http
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - pg-docker
-  #     - redis
-  #   networks:
-  #     - dev-network
+  product-api:
+    image: fernandocanabarroahnert/express-typescript-ecommerce
+    container_name: product-api
+    environment:
+      - DATABASE_URL=postgresql://postgres:1234567@pg-docker:5432/products
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=secret-key
+      - ACCESS_TOKEN_DURATION=86400
+      - REFRESH_TOKEN_DURATION=2592000
+      - PORT=3000
+      - NODE_ENV=dev
+      - LOG_LEVEL=http
+    ports:
+      - "3000:3000"
+    depends_on:
+      - pg-docker
+      - redis
+    networks:
+      - dev-network
 
 networks:
   dev-network:

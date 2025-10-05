@@ -14,6 +14,9 @@ import { TooManyRequestsException } from "./common/exceptions/too-many-requests.
 import orderRouter from "./orders/routes/order.routes";
 import { env } from "./common/config/env.config";
 import { logger } from "./common/config/winston.config";
+import { loggerMiddleware } from "./common/middlewares/logger.middleware";
+import swagger from 'swagger-ui-express';
+import swaggerFile from './common/docs/swagger-output.json';
 
 const app = express();
 app.use(express.json());
@@ -21,47 +24,7 @@ app.use(cookieParser());
 app.use(helmet());
 app.use(cors());
 
-app.use((req, res, next) => {
-    const logData = {
-        method: req.method,
-        url: req.url,
-        ip: req.ip,
-        headers: req.headers,
-        cookies: req.cookies,
-        query: req.query,
-        params: req.params,
-        body: req.body,
-        statusCode: res.statusCode
-    };
-    logger.http(`Incoming request: ${JSON.stringify(logData, null, 2)}`);
-
-    const startTime = Date.now();
-    const originalSend = res.send;
-    let responseBody: any;
-    res.send = function (body: any) {
-        responseBody = body;
-        return originalSend.call(this, body);
-    };
-    res.on('finish', () => {
-        const duration = Date.now() - startTime;
-        const logData = {
-            statusCode: res.statusCode,
-            duration: `${duration}ms`,
-            request: {
-                headers: req.headers,
-                cookies: req.cookies,
-                query: req.query,
-                params: req.params,
-                body: req.body
-            },
-            response: {
-                body: responseBody
-            }
-        };
-        logger.http(`Request completed, ${JSON.stringify(logData, null, 2)}`);
-    });
-    next();
-});
+app.use(loggerMiddleware);
 
 if (env.NODE_ENV !== 'test') {
     const loginLimiter = rateLimit({
@@ -85,6 +48,8 @@ app.use('/brands', brandsRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/auth', authRouter);
 app.use('/orders', orderRouter);
+
+app.use('/docs', swagger.serve, swagger.setup(swaggerFile));
 
 app.use(handleError);
 

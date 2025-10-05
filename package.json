@@ -6,7 +6,8 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "dev": "tsx watch src",
-    "test": "jest"
+    "test": "jest",
+    "swagger": "node ./swagger.js"
   },
   "keywords": [],
   "author": "",
@@ -21,9 +22,11 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.1.0",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "jest": "^30.0.5",
     "prisma": "^5.22.0",
     "supertest": "^7.1.4",
+    "swagger-autogen": "^2.23.7",
     "testcontainers": "^11.4.0",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
@@ -44,6 +47,7 @@
     "ioredis": "^5.7.0",
     "jsonwebtoken": "^9.0.2",
     "reflect-metadata": "^0.2.2",
+    "swagger-ui-express": "^5.0.1",
     "tsyringe": "^4.10.0",
     "winston": "^3.18.1",
     "zod": "^4.1.11"
